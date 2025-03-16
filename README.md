@@ -1,69 +1,71 @@
 # OpenWeather MCP Server
 
-这是一个简单的天气预报 MCP (Model Control Protocol) 服务器，提供全球天气预报和当前天气状况查询功能。
+English | [中文版](README_CN.md)
 
-<img src="image.png" alt="Claude Desktop使用MCP天气服务" width="600">
+A simple weather forecast MCP (Model Control Protocol) server providing global weather forecasts and current weather conditions.
 
-以上是Claude Desktop使用MCP天气服务的效果截图：
+<img src="image.png" alt="Claude Desktop using the MCP Weather Service" width="600">
 
-## 特点
+Screenshot of Claude Desktop using the MCP Weather Service
 
-- 无需单独的配置文件，API密钥可以直接通过环境变量或参数传递
-- 支持查询全球任何地点的天气状况
-- 提供当前天气和未来预报
-- 带有详细的天气信息，包括温度、湿度、风速等
-- 支持不同时区的天气数据
+## Features
 
-## 安装要求
+- No separate configuration file needed; API key can be passed directly through environment variables or parameters
+- Support for querying weather conditions anywhere in the world
+- Provides current weather and future forecasts
+- Detailed weather information including temperature, humidity, wind speed, etc.
+- Support for different time zones
+
+## Installation Requirements
 
 ```
 pip install mcp-server requests pydantic
 ```
 
-## 使用方法
+## Usage
 
-### 1. 获取OpenWeatherMap API密钥
+### 1. Get an OpenWeatherMap API Key
 
-访问 [OpenWeatherMap](https://openweathermap.org/) 并注册一个账号获取API密钥。
+Visit [OpenWeatherMap](https://openweathermap.org/) and register an account to obtain an API key.
 
-### 2. 运行服务器
+### 2. Run the Server
 
-有两种方式提供API密钥：
+There are two ways to provide the API key:
 
-#### 方式1：通过环境变量
+#### Method 1: Using Environment Variables
 
 ```bash
-# 设置环境变量
-export OPENWEATHER_API_KEY="你的API密钥"  # Linux/Mac
-set OPENWEATHER_API_KEY=你的API密钥  # Windows
+# Set environment variables
+export OPENWEATHER_API_KEY="your_api_key"  # Linux/Mac
+set OPENWEATHER_API_KEY=your_api_key  # Windows
 
-# 运行服务器
+# Run the server
 python weather_mcp_server.py
 ```
 
-#### 方式2：在工具调用时提供
+#### Method 2: Provide When Calling the Tool
 
-不设置环境变量，直接运行：
+Run directly without setting environment variables:
 
 ```bash
 python weather_mcp_server.py
 ```
 
-在调用工具时，需要提供`api_key`参数。
+When calling the tool, you'll need to provide the `api_key` parameter.
 
-### 3. 在MCP客户端配置中使用
+### 3. Use in MCP Client Configuration
 
-在支持MCP的客户端配置中添加以下配置：
+Add the following configuration to your MCP-supported client:
 
 ```json
 {
   "weather_forecast": {
     "command": "python",
     "args": [
-      "/完整路径/weather_mcp_server.py"
+      "/full_path/weather_mcp_server.py"
     ],
     "env": {
-      "OPENWEATHER_API_KEY": "你的OpenWeatherMap密钥在这里"
+      "OPENWEATHER_API_KEY": "your_openweathermap_key_here"
     },
     "disabled": false,
     "autoApprove": ["get_weather", "get_current_weather"]
@@ -71,43 +73,43 @@ python weather_mcp_server.py
 }
 ```
 
-### 4. 可用的工具
+### 4. Available Tools
 
 #### get_weather
 
-获取指定地点的当前天气和未来预报。
+Get current weather and forecast for a specified location.
 
-参数:
-- `location`: 地点名称，例如："Beijing"、"New York"、"Tokyo"
-- `api_key`: OpenWeatherMap API密钥（可选，如未提供将从环境变量读取）
-- `timezone_offset`: 时区偏移量（小时），如北京为8，纽约为-4。默认为0（UTC时间）
+Parameters:
+- `location`: Location name, e.g., "Beijing", "New York", "Tokyo"
+- `api_key`: OpenWeatherMap API key (optional, will read from environment variable if not provided)
+- `timezone_offset`: Timezone offset in hours, e.g., 8 for Beijing, -4 for New York. Default is 0 (UTC time)
 
 #### get_current_weather
 
-获取指定地点的当前天气。
+Get current weather for a specified location.
 
-参数:
-- `location`: 地点名称，例如："Beijing"、"New York"、"Tokyo"
-- `api_key`: OpenWeatherMap API密钥（可选，如未提供将从环境变量读取）
-- `timezone_offset`: 时区偏移量（小时），如北京为8，纽约为-4。默认为0（UTC时间）
+Parameters:
+- `location`: Location name, e.g., "Beijing", "New York", "Tokyo"
+- `api_key`: OpenWeatherMap API key (optional, will read from environment variable if not provided)
+- `timezone_offset`: Timezone offset in hours, e.g., 8 for Beijing, -4 for New York. Default is 0 (UTC time)
 
-## 使用示例
+## Usage Example
 
-AI助手调用示例：
+AI assistant call example:
 
 ```
-用户: 北京现在天气怎么样？
+User: What's the weather like in New York right now?
 
-AI: 让我为您查询北京的当前天气。
-[调用get_current_weather("Beijing", timezone_offset=8)]
+AI: Let me check the current weather in New York for you.
+[Calling get_current_weather("New York", timezone_offset=-4)]
 
-北京当前天气：23°C，晴，湿度45%，风速2.1m/s。
+Current weather in New York: 18°C, partly cloudy, humidity 65%, wind speed 3.5m/s.
 ```
 
-## 故障排除
+## Troubleshooting
 
-如果遇到"未提供API密钥"错误，请确保：
-1. 在环境变量中设置了OPENWEATHER_API_KEY，或
-2. 在调用工具时提供了api_key参数
+If you encounter a "No API key provided" error, make sure:
+1. You have set the OPENWEATHER_API_KEY in environment variables, or
+2. You are providing the api_key parameter when calling the tools
 
-如果地点名称不正确，可能会收到"地点未找到"错误，请尝试使用更准确的城市名称或添加国家代码，例如："Beijing,CN"或"Paris,FR"。 
+If the location name is incorrect, you might receive a "Location not found" error. Try using a more accurate city name or add a country code, e.g., "Beijing,CN" or "Paris,FR". 
