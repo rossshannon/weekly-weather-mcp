@@ -2,7 +2,7 @@
 
 这是一个简单的天气预报 MCP (Model Control Protocol) 服务器，提供全球天气预报和当前天气状况查询功能。
 
-![Claude Desktop使用MCP天气服务](image.png)
+<img src="image.png" alt="Claude Desktop使用MCP天气服务" width="600">
 
 以上是Claude Desktop使用MCP天气服务的效果截图：
 
