@@ -1,8 +1,8 @@
 # 🌦️ Weekly Weather MCP Server
 
-A weather forecast MCP (Model Control Protocol) server providing **8-day global weather forecasts and current weather conditions** using the OpenWeatherMap One Call API 3.0.
+A weather forecast MCP (Model Context Protocol) server providing **8-day global weather forecasts** and current weather conditions using the [OpenWeatherMap](https://openweathermap.org) [One Call API 3.0](https://openweathermap.org/api/one-call-3).
 
-> This project builds upon the original [Weather MCP](https://github.com/Zippland/weather-mcp) by Zippland, with modifications to support full week forecasts and additional time-of-day data points.
+> This project builds upon an earlier project by [Zippland](https://github.com/Zippland/weather-mcp), with modifications to support full week forecasts and additional time-of-day data points.
 
 <div align="center">
   <img src="https://rossshannon.github.io/weekly-weather-mcp/images/weather-mcp-thinking.gif" alt="Claude calling MCP server" width="800">
@@ -18,16 +18,17 @@ A weather forecast MCP (Model Control Protocol) server providing **8-day global 
 
 - No separate configuration file needed; API key can be passed directly through environment variables or parameters
 - Support for querying weather conditions anywhere in the world
-- Provides current weather and detailed 8-day forecasts (today + 7 days)
+- Provides current weather and detailed 8-day forecasts (today + following 7 days)
+- Worldwide coverage
 - Hourly forecasts for the next 48 hours
 - Daily forecasts with morning, afternoon, and evening data points
 - Weather summaries and precipitation probabilities
 - Detailed weather information including temperature, humidity, wind speed, etc.
-- Support for different time zones
+- Support for reporting results in different time zones
 
 ## Usage
 
-### 1. Get an OpenWeatherMap API Key with One Call API 3.0 Access
+### 1. Get an OpenWeatherMap API Key with One Call API 3.0 Access (free)
 
 1. Visit [OpenWeatherMap](https://openweathermap.org/) and register an account
 2. Subscribe to the “One Call API 3.0” plan (offers 1,000 API calls per day for free)
@@ -48,8 +49,8 @@ The One Call API 3.0 provides comprehensive weather data:
 - **Free tier**: 1,000 API calls per day
 - **Default limit**: 2,000 API calls per day (can be adjusted in your account)
 - **Billing**: Any calls beyond the free 1,000/day will be charged according to OpenWeatherMap pricing
-- **Usage cap**: You can set a call limit in your account to prevent exceeding your budget (including going beyond the free tier limit so not costs will be incurred)
-- If you reach your limit, you’ll receive a “429” error response
+- **Usage cap**: You can set a call limit in your account to prevent exceeding your budget (including capping your usage at the free tier limit so no costs will be incurred)
+- If you reach your limit, you’ll receive a HTTP 429 error response
 
 > **Note**: API key activation can take several minutes up to an hour. If you receive authentication errors shortly after subscribing or generating a new key, wait a bit and try again later.
 
@@ -80,7 +81,7 @@ When calling the tool, you’ll need to provide the `api_key` parameter.
 
 ### 3. Use in MCP Client Configuration
 
-Add the following configuration to your MCP-supported client:
+Add the following configuration to your MCP-supported client (e.g., [Claude Desktop](https://www.anthropic.com/claude-desktop) ([instructions](https://modelcontextprotocol.io/quickstart/user)), [Cursor](https://www.cursor.com/)):
 
 ```json
 {
@@ -98,7 +99,7 @@ Add the following configuration to your MCP-supported client:
 }
 ```
 
-If you’re using a virtual environment, your configuration should include the path to the Python executable in the virtual environment:
+If you’re using a virtual environment, your configuration should include the full path to the Python executable in the virtual environment:
 
 ```json
 {
@@ -123,9 +124,9 @@ If you’re using a virtual environment, your configuration should include the p
 Get comprehensive weather data for a location including current weather and 8-day forecast with detailed information.
 
 Parameters:
-- `location`: Location name, e.g., “Beijing”, “New York”, “Tokyo”
+- `location`: Location name as a string, e.g., “Beijing”, “New York”, “Tokyo”. The tool will handle geocoding this to a latitude/longitude coordinate.
 - `api_key`: OpenWeatherMap API key (optional, will read from environment variable if not provided)
-- `timezone_offset`: Timezone offset in hours, e.g., 8 for Beijing, -4 for New York. Default is 0 (UTC time)
+- `timezone_offset`: Timezone offset in hours, e.g., 8 for Beijing, -4 for New York. Default is 0 (UTC time). Times in the returned data will be accurate for this timezone.
 
 Returns:
 - Current weather information
@@ -136,10 +137,10 @@ Returns:
 - Detailed weather information including temperature, humidity, wind speed, etc.
 
 Perfect for use cases like:
-- “Which day this week should I mow my lawn?”
-- “When is the best time to go for a run?”
-- “Will it rain this weekend?”
-- “How much rain is expected in the next 3 days?”
+- “🏃‍♂️ Which days this week should I go for a run?”
+- “🪴 When’s the best evening to work in my garden this week?”
+- “🪁 What’s the windiest day coming up soon for flying a kite?”
+- “💧 Will I need to water my plants this week or will rain take care of it?”
 
 ##### Location Lookup Details
 
@@ -199,7 +200,7 @@ Looking at the Boston forecast for the week:
 Tuesday would be your best option for mowing the lawn. It will be clear and sunny with no chance of rain, and the temperature will be comfortable at around 10°C.
 ```
 
-You can combine this MCP server with others to achieve multi-step workflows. For example, once the weather has been checked, you can also tell Claude to add that an event in your calendar to remind yourself of those plans.
+You can combine this MCP server with others to achieve multi-step workflows. For example, once the weather has been checked, you can also tell Claude to add that as an event in your calendar to remind yourself of those plans.
 
 <div align="center">
   <img src="https://rossshannon.github.io/weekly-weather-mcp/images/calendar-integration-example.png" alt="Calendar event created by Claude" width="365">
@@ -211,10 +212,9 @@ You can combine this MCP server with others to achieve multi-step workflows. For
 ### API Key Issues
 
 If you encounter an “Invalid API key” or authorization error:
-1. Make sure you’ve subscribed to the “One Call API 3.0” plan
+1. Make sure you’ve subscribed to the “One Call API 3.0” plan. You’ll need a debit or credit card to enable your account, but you’ll only be charged if you exceed the free tier limit.
 2. Remember that API key activation can take up to an hour
-3. Verify you have set the OPENWEATHER_API_KEY correctly in environment variables
-4. Check that you’re providing the correct api_key parameter when calling the tools
+3. Verify you have set the OPENWEATHER_API_KEY correctly in environment variables, or check that you’re providing the correct api_key parameter when calling the tools
 
 ### Other Common Issues
 
