@@ -8,7 +8,7 @@ A weather forecast MCP (Model Control Protocol) server providing **8-day global 
   <img src="https://rossshannon.github.io/weekly-weather-mcp/images/weather-mcp-thinking.gif" alt="Claude calling MCP server" width="800">
   <p><em>Animation showing Claude Desktop processing the weather data from the MCP Server</em></p>
 </div>
-
+<br>
 <div align="center">
   <img src="https://rossshannon.github.io/weekly-weather-mcp/images/weather-forecast-example.png" alt="Claude displaying weather forecast" width="700">
   <p><em>Claude Desktop showing a detailed weather forecast with lawn mowing recommendations</em></p>
@@ -198,6 +198,13 @@ Looking at the Boston forecast for the week:
 
 Tuesday would be your best option for mowing the lawn. It will be clear and sunny with no chance of rain, and the temperature will be comfortable at around 10°C.
 ```
+
+You can combine this MCP server with others to achieve multi-step workflows. For example, once the weather has been checked, you can also tell Claude to add that an event in your calendar to remind yourself of those plans.
+
+<div align="center">
+  <img src="https://rossshannon.github.io/weekly-weather-mcp/images/calendar-integration-example.png" alt="Calendar event created by Claude" width="365">
+  <p><em>Calendar event created by Claude based on the weather forecast</em></p>
+</div>
 
 ## Troubleshooting
 
