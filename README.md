@@ -16,15 +16,13 @@ A weather forecast MCP (Model Context Protocol) server providing **8-day global 
 
 ## Features
 
-- No separate configuration file needed; API key can be passed directly through environment variables or parameters
-- Support for querying weather conditions anywhere in the world
-- Provides current weather and detailed 8-day forecasts (today + following 7 days)
-- Worldwide coverage
-- Hourly forecasts for the next 48 hours
-- Daily forecasts with morning, afternoon, and evening data points
-- Weather summaries and precipitation probabilities
-- Detailed weather information including temperature, humidity, wind speed, etc.
-- Support for reporting results in different time zones
+- 🌍 Support for querying weather conditions anywhere in the world
+- 🌤️ Hourly forecasts for the next 48 hours
+- 📅 Provides detailed 8-day forecasts (today + following 7 days), with morning, afternoon, and evening data points
+- 🌧️ Weather summaries and precipitation probabilities
+- 🌡️ Detailed weather information including temperature, humidity, wind speed, etc.
+- 📍 Support for reporting results in different time zones
+- 🗂️ No separate configuration file needed; API key can be passed directly through environment variables or parameters
 
 ## Usage
 
@@ -49,7 +47,7 @@ The One Call API 3.0 provides comprehensive weather data:
 - **Free tier**: 1,000 API calls per day
 - **Default limit**: 2,000 API calls per day (can be adjusted in your account)
 - **Billing**: Any calls beyond the free 1,000/day will be charged according to OpenWeatherMap pricing
-- **Usage cap**: You can set a call limit in your account to prevent exceeding your budget (including capping your usage at the free tier limit so no costs will be incurred)
+- **Usage cap**: You can set a call limit in your account to prevent exceeding your budget (including capping your usage at the free tier limit so no costs can be incurred)
 - If you reach your limit, you’ll receive a HTTP 429 error response
 
 > **Note**: API key activation can take several minutes up to an hour. If you receive authentication errors shortly after subscribing or generating a new key, wait a bit and try again later.
@@ -62,13 +60,13 @@ git clone https://github.com/rossshannon/weekly-weather-mcp.git
 cd weekly-weather-mcp
 
 # Create a virtual environment (recommended)
-python -m venv venv
+python3 -m venv venv
 source venv/bin/activate  # Linux/Mac
 # OR
 venv\Scripts\activate  # Windows
 
 # Install dependencies
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 ```
 
 This will install all the necessary dependencies to run the server and development tools.
@@ -138,14 +136,15 @@ If you’re using a virtual environment, your configuration should include the f
 
 ### 5. Available Tools
 
-#### get_weather
+The server exposes two tools, `get_weather` and `get_current_weather`. Both tools accept the same parameters:
 
-Get comprehensive weather data for a location including current weather and 8-day forecast with detailed information.
-
-Parameters:
 - `location`: Location name as a string, e.g., “Beijing”, “New York”, “Tokyo”. The tool will handle geocoding this to a latitude/longitude coordinate.
 - `api_key`: OpenWeatherMap API key (optional, will read from environment variable if not provided)
 - `timezone_offset`: Timezone offset in hours, e.g., 8 for Beijing, -4 for New York. Default is 0 (UTC time). Times in the returned data will be accurate for this timezone.
+
+#### get_weather
+
+Get comprehensive weather data for a location including current weather (next 48 hours) and 8-day forecast with detailed information.
 
 Returns:
 - Current weather information
@@ -159,7 +158,16 @@ Perfect for use cases like:
 - “🏃‍♂️ Which days this week should I go for a run?”
 - “🪴 When’s the best evening to work in my garden this week?”
 - “🪁 What’s the windiest day coming up soon for flying a kite?”
-- “💧 Will I need to water my plants this week or will rain take care of it?”
+- “💧 Will I need to water my garden this week or will rain take care of it?”
+
+#### get_current_weather
+
+Get current weather for a specified location.
+
+Returns:
+- A simplified subset of the data returned by `get_weather`
+- Only the current weather information (temperature, feels like, weather condition, humidity, wind, etc.); no forecast data for future time periods
+- Useful for quick queries about present conditions only
 
 ##### Location Lookup Details
 
@@ -172,19 +180,6 @@ The `location` parameter uses OpenWeatherMap’s geocoding to convert location n
 - Location names are converted to latitude/longitude coordinates internally
 
 If a location can’t be found, the API will return an error. In case of ambiguous locations, try adding country or state codes for more precise results.
-
-#### get_current_weather
-
-Get current weather for a specified location.
-
-Parameters:
-- `location`: Location name, e.g., “Beijing”, “New York”, “Tokyo”
-- `api_key`: OpenWeatherMap API key (optional, will read from environment variable if not provided)
-- `timezone_offset`: Timezone offset in hours, e.g., 8 for Beijing, -4 for New York. Default is 0 (UTC time)
-
-##### Location Lookup Details
-
-The same location lookup process applies as described in the `get_weather` tool above. For ambiguous city names, include country codes for precise results.
 
 ## Usage Examples
 
@@ -233,19 +228,18 @@ You can combine this MCP server with others to achieve multi-step workflows. For
 If you encounter an “Invalid API key” or authorization error:
 1. Make sure you’ve subscribed to the “One Call API 3.0” plan. You’ll need a debit or credit card to enable your account, but you’ll only be charged if you exceed the free tier limit.
 2. Remember that API key activation can take up to an hour
-3. Verify you have set the OPENWEATHER_API_KEY correctly in environment variables, or check that you’re providing the correct api_key parameter when calling the tools
+3. Verify you have set the `OPENWEATHER_API_KEY` correctly in environment variables, or check that you’re providing the correct `api_key` parameter when calling the tools
 
 ### Other Common Issues
 
 - **“Location not found” error**:
-  - Try using a more accurate city name or add a country code, e.g., “Beijing,CN” or “Paris,FR”
-  - For US cities with common names, specify the state: “Springfield,IL,US” or “Portland,OR,US”
   - Check for typos in location names
   - Some very small or remote locations might not be in OpenWeatherMap’s database
 
 - **Incorrect location returned**:
-  - For cities with the same name in different countries, always include the country code
-  - Example: “Paris,FR” for Paris, France vs “Paris,TX,US” for Paris, Texas
+  - Try using a more accurate city name or add a country code, e.g., “Beijing,CN” or “Porto,PT”
+  - For US cities with common names, specify the state: “Springfield,IL,US” or “Portland,OR,US”
+  - For cities with the same name in different countries, always include the country code and state if applicable: “Paris,FR” for Paris, France vs “Paris,TX,US” for Paris, Texas, USA.
 
 - **Rate limiting (429 error)**: You’ve exceeded your API call limit. Check your OpenWeatherMap account settings.
 
