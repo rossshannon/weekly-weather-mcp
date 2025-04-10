@@ -1,18 +1,23 @@
-# OpenWeather MCP Server
+# Weekly Weather MCP Server
 
-English | [中文版](README_CN.md)
 
-A simple weather forecast MCP (Model Control Protocol) server providing global weather forecasts and current weather conditions.
+A weather forecast MCP (Model Control Protocol) server providing **8-day** global weather forecasts and current weather conditions using the OpenWeatherMap One Call API 3.0.
 
-<img src="image.png" alt="Claude Desktop using the MCP Weather Service" width="600">
+> This project builds upon the original [Weather MCP](https://github.com/Zippland/weather-mcp) by Zippland, with modifications to support full week forecasts and additional time-of-day data points.
 
-Screenshot of Claude Desktop using the MCP Weather Service
+<div align="center">
+  <img src="image.png" alt="Claude Desktop using the MCP Weather Service" width="600">
+  <p><em>Screenshot of Claude Desktop using the MCP Weather Service</em></p>
+</div>
 
 ## Features
 
 - No separate configuration file needed; API key can be passed directly through environment variables or parameters
 - Support for querying weather conditions anywhere in the world
-- Provides current weather and future forecasts
+- Provides current weather and detailed 8-day forecasts (today + 7 days)
+- Hourly forecasts for the next 48 hours
+- Daily forecasts with morning, afternoon, and evening data points
+- Weather summaries and precipitation probabilities
 - Detailed weather information including temperature, humidity, wind speed, etc.
 - Support for different time zones
 
@@ -24,9 +29,31 @@ pip install mcp-server requests pydantic
 
 ## Usage
 
-### 1. Get an OpenWeatherMap API Key
+### 1. Get an OpenWeatherMap API Key with One Call API 3.0 Access
 
-Visit [OpenWeatherMap](https://openweathermap.org/) and register an account to obtain an API key.
+1. Visit [OpenWeatherMap](https://openweathermap.org/) and register an account
+2. Subscribe to the "One Call API 3.0" plan (offers 1,000 API calls per day for free)
+3. Wait for API key activation (this can take up to an hour)
+
+#### About the One Call API 3.0
+
+The One Call API 3.0 provides comprehensive weather data:
+- Current weather conditions
+- Minute forecast for 1 hour
+- Hourly forecast for 48 hours
+- Daily forecast for 8 days (including today)
+- National weather alerts
+- Historical weather data
+
+#### API Usage and Limits
+
+- **Free tier**: 1,000 API calls per day
+- **Default limit**: 2,000 API calls per day (can be adjusted in your account)
+- **Billing**: Any calls beyond the free 1,000/day will be charged according to OpenWeatherMap pricing
+- **Usage cap**: You can set a call limit in your account to prevent exceeding your budget
+- If you reach your limit, you'll receive a "429" error response
+
+> **Note**: API key activation can take several minutes up to an hour. If you receive authentication errors shortly after subscribing, please wait and try again later.
 
 ### 2. Run the Server
 
@@ -60,7 +87,7 @@ Add the following configuration to your MCP-supported client:
 ```json
 {
   "weather_forecast": {
-    "command": "python",
+    "command": "python3",
     "args": [
       "/full_path/weather_mcp_server.py"
     ],
@@ -77,12 +104,37 @@ Add the following configuration to your MCP-supported client:
 
 #### get_weather
 
-Get current weather and forecast for a specified location.
+Get comprehensive weather data for a location including current weather and 8-day forecast with detailed information.
 
 Parameters:
 - `location`: Location name, e.g., "Beijing", "New York", "Tokyo"
 - `api_key`: OpenWeatherMap API key (optional, will read from environment variable if not provided)
 - `timezone_offset`: Timezone offset in hours, e.g., 8 for Beijing, -4 for New York. Default is 0 (UTC time)
+
+Returns:
+- Current weather information
+- Hourly forecasts for the next 48 hours
+- Daily forecasts for 8 days (today + 7 days ahead)
+- Morning (9 AM), afternoon (3 PM), and evening (8 PM) data points for each day
+- Weather summaries and precipitation probabilities
+- Detailed weather information including temperature, humidity, wind speed, etc.
+
+Perfect for use cases like:
+- "Which day this week should I mow my lawn?"
+- "When is the best time to go for a run?"
+- "Will it rain this weekend?"
+
+##### Location Lookup Details
+
+The `location` parameter uses OpenWeatherMap's geocoding to convert location names to geographic coordinates:
+
+- Simple location names work: "Paris", "Tokyo", "New York"
+- For better accuracy, include country codes: "Paris,FR", "London,GB", "Portland,US"
+- For US cities, you can include state: "Portland,OR,US" or "Portland,ME,US"
+- The API supports any location on Earth that OpenWeatherMap can geocode
+- Location names are converted to latitude/longitude coordinates internally
+
+If a location can't be found, the API will return an error. In case of ambiguous locations, try adding country or state codes for more precise results.
 
 #### get_current_weather
 
@@ -93,9 +145,13 @@ Parameters:
 - `api_key`: OpenWeatherMap API key (optional, will read from environment variable if not provided)
 - `timezone_offset`: Timezone offset in hours, e.g., 8 for Beijing, -4 for New York. Default is 0 (UTC time)
 
-## Usage Example
+##### Location Lookup Details
 
-AI assistant call example:
+The same location lookup process applies as described in the `get_weather` tool above. For ambiguous city names, include country codes for precise results.
+
+## Usage Examples
+
+### Example 1: Current Weather
 
 ```
 User: What's the weather like in New York right now?
@@ -103,13 +159,112 @@ User: What's the weather like in New York right now?
 AI: Let me check the current weather in New York for you.
 [Calling get_current_weather("New York", timezone_offset=-4)]
 
-Current weather in New York: 18°C, partly cloudy, humidity 65%, wind speed 3.5m/s.
+Current weather in New York: 5°C, few clouds, humidity 42%, wind speed 4.1m/s.
+```
+
+### Example 2: Weekly Planning
+
+```
+User: I need to mow my lawn this week in Boston. Which day would be best?
+
+AI: Let me check the weather forecast for Boston to find the best day for lawn mowing.
+[Calling get_weather("Boston", timezone_offset=-4)]
+
+Looking at the Boston forecast for the week:
+- Today (Monday): Light rain (28% chance), 5°C
+- Tuesday: Clear, sunny, 10°C
+- Wednesday: Light rain (100% chance), 9°C
+- Thursday: Moderate rain (100% chance), 10°C
+- Friday: Moderate rain (100% chance), 11°C
+- Saturday: Partly cloudy, 13°C
+- Sunday: Scattered clouds, 17°C
+
+Tuesday would be your best option for mowing the lawn. It will be clear and sunny with no chance of rain, and the temperature will be comfortable at around 10°C.
 ```
 
 ## Troubleshooting
 
-If you encounter a "No API key provided" error, make sure:
-1. You have set the OPENWEATHER_API_KEY in environment variables, or
-2. You are providing the api_key parameter when calling the tools
+### API Key Issues
 
-If the location name is incorrect, you might receive a "Location not found" error. Try using a more accurate city name or add a country code, e.g., "Beijing,CN" or "Paris,FR". 
+If you encounter an "Invalid API key" or authorization error:
+1. Make sure you've subscribed to the "One Call API 3.0" plan
+2. Remember that API key activation can take up to an hour
+3. Verify you have set the OPENWEATHER_API_KEY correctly in environment variables
+4. Check that you're providing the correct api_key parameter when calling the tools
+
+### Other Common Issues
+
+- **"Location not found" error**: 
+  - Try using a more accurate city name or add a country code, e.g., "Beijing,CN" or "Paris,FR"
+  - For US cities with common names, specify the state: "Springfield,IL,US" or "Portland,OR,US"
+  - Check for typos in location names
+  - Some very small or remote locations might not be in OpenWeatherMap's database
+
+- **Incorrect location returned**: 
+  - For cities with the same name in different countries, always include the country code
+  - Example: "Paris,FR" for Paris, France vs "Paris,TX,US" for Paris, Texas
+
+- **Rate limiting (429 error)**: You've exceeded your API call limit. Check your OpenWeatherMap account settings.
+
+## Development and Testing
+
+### Testing
+
+This project includes test files to validate the MCP server functionality. The server has been manually tested to ensure it works correctly with Claude Desktop and other MCP clients.
+
+#### Manual Testing
+
+The simplest way to test the server is to:
+
+1. Set your OpenWeatherMap API key:
+   ```bash
+   export OPENWEATHER_API_KEY="your_api_key"
+   ```
+
+2. Run the server:
+   ```bash
+   python3 weather_mcp_server.py
+   ```
+
+3. In another terminal, you can send a test request using curl:
+   ```bash
+   curl -X POST -H "Content-Type: application/json" -d '{"tool": "get_current_weather", "parameters": {"location": "New York", "timezone_offset": -4}}' http://localhost:8000
+   ```
+
+#### Automated Tests
+
+The repository includes unit and integration test files that:
+- Test API key handling and validation
+- Validate data parsing and formatting
+- Verify error handling for API failures
+- Test both MCP tools: `get_weather` and `get_current_weather`
+
+These tests require proper setup of the development environment with all dependencies installed. They're provided as reference for future development.
+
+## Screenshots and Demos
+
+### Weather Forecast Example
+
+<div align="center">
+  <img src="https://rossshannon.github.io/weekly-weather-mcp/images/weather-forecast-example.png" alt="Claude displaying weather forecast" width="700">
+  <p><em>Claude showing a detailed weather forecast with lawn mowing recommendations</em></p>
+</div>
+
+### Claude Thinking Animation
+
+Watch Claude process the weather data in real-time:
+
+<div align="center">
+  <img src="https://rossshannon.github.io/weekly-weather-mcp/images/weather-mcp-thinking.gif" alt="Claude thinking animation" width="800">
+  <p><em>Animation showing Claude processing the weather data from the MCP Server</em></p>
+</div>
+
+## Credits
+
+This project is adapted from the original [Weather MCP](https://github.com/Zippland/weather-mcp) by Zippland. The modifications include:
+
+- Integration with OpenWeatherMap One Call API 3.0
+- Extended forecast data from 5 days to 8 days (today + 7 days)
+- Addition of morning, afternoon and evening data points for each day
+- Hourly forecasts for the next 48 hours
+- Inclusion of weather summaries and precipitation probabilities
