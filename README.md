@@ -1,13 +1,17 @@
-# Weekly Weather MCP Server
+# 🌦️ Weekly Weather MCP Server
 
-
-A weather forecast MCP (Model Control Protocol) server providing **8-day** global weather forecasts and current weather conditions using the OpenWeatherMap One Call API 3.0.
+A weather forecast MCP (Model Control Protocol) server providing **8-day global weather forecasts and current weather conditions** using the OpenWeatherMap One Call API 3.0.
 
 > This project builds upon the original [Weather MCP](https://github.com/Zippland/weather-mcp) by Zippland, with modifications to support full week forecasts and additional time-of-day data points.
 
 <div align="center">
-  <img src="image.png" alt="Claude Desktop using the MCP Weather Service" width="600">
-  <p><em>Screenshot of Claude Desktop using the MCP Weather Service</em></p>
+  <img src="https://rossshannon.github.io/weekly-weather-mcp/images/weather-mcp-thinking.gif" alt="Claude calling MCP server" width="800">
+  <p><em>Animation showing Claude Desktop processing the weather data from the MCP Server</em></p>
+</div>
+
+<div align="center">
+  <img src="https://rossshannon.github.io/weekly-weather-mcp/images/weather-forecast-example.png" alt="Claude displaying weather forecast" width="700">
+  <p><em>Claude Desktop showing a detailed weather forecast with lawn mowing recommendations</em></p>
 </div>
 
 ## Features
@@ -23,8 +27,33 @@ A weather forecast MCP (Model Control Protocol) server providing **8-day** globa
 
 ## Installation Requirements
 
+### Setting Up a Virtual Environment (Recommended)
+
+It’s recommended to use a virtual environment to avoid conflicts with other Python packages:
+
+```bash
+# Create a virtual environment
+python3 -m venv venv
+
+# Activate the virtual environment
+# On macOS/Linux:
+source venv/bin/activate
+# On Windows:
+# venv\Scripts\activate
+
+# Install dependencies
+pip3 install mcp-server requests pydantic
+
+# When you’re done, you can deactivate the virtual environment
+# deactivate
 ```
-pip install mcp-server requests pydantic
+
+### Direct Installation
+
+If you prefer not to use a virtual environment, you can install the dependencies directly:
+
+```bash
+pip3 install mcp-server requests pydantic
 ```
 
 ## Usage
@@ -88,6 +117,24 @@ Add the following configuration to your MCP-supported client:
 {
   "weather_forecast": {
     "command": "python3",
+    "args": [
+      "/full_path/weather_mcp_server.py"
+    ],
+    "env": {
+      "OPENWEATHER_API_KEY": "your_openweathermap_key_here"
+    },
+    "disabled": false,
+    "autoApprove": ["get_weather", "get_current_weather"]
+  }
+}
+```
+
+If you're using a virtual environment, your configuration should include the path to the Python executable in the virtual environment:
+
+```json
+{
+  "weather_forecast": {
+    "command": "/full_path/venv/bin/python3",
     "args": [
       "/full_path/weather_mcp_server.py"
     ],
@@ -194,13 +241,13 @@ If you encounter an "Invalid API key" or authorization error:
 
 ### Other Common Issues
 
-- **"Location not found" error**: 
+- **"Location not found" error**:
   - Try using a more accurate city name or add a country code, e.g., "Beijing,CN" or "Paris,FR"
   - For US cities with common names, specify the state: "Springfield,IL,US" or "Portland,OR,US"
   - Check for typos in location names
   - Some very small or remote locations might not be in OpenWeatherMap's database
 
-- **Incorrect location returned**: 
+- **Incorrect location returned**:
   - For cities with the same name in different countries, always include the country code
   - Example: "Paris,FR" for Paris, France vs "Paris,TX,US" for Paris, Texas
 
@@ -240,24 +287,6 @@ The repository includes unit and integration test files that:
 - Test both MCP tools: `get_weather` and `get_current_weather`
 
 These tests require proper setup of the development environment with all dependencies installed. They're provided as reference for future development.
-
-## Screenshots and Demos
-
-### Weather Forecast Example
-
-<div align="center">
-  <img src="https://rossshannon.github.io/weekly-weather-mcp/images/weather-forecast-example.png" alt="Claude displaying weather forecast" width="700">
-  <p><em>Claude showing a detailed weather forecast with lawn mowing recommendations</em></p>
-</div>
-
-### Claude Thinking Animation
-
-Watch Claude process the weather data in real-time:
-
-<div align="center">
-  <img src="https://rossshannon.github.io/weekly-weather-mcp/images/weather-mcp-thinking.gif" alt="Claude thinking animation" width="800">
-  <p><em>Animation showing Claude processing the weather data from the MCP Server</em></p>
-</div>
 
 ## Credits
 
