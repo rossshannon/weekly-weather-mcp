@@ -5,9 +5,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 - Run server: `python3 weather_mcp_server.py`
 - Install dependencies: `pip3 install mcp-server requests pydantic`
-- Format code: `black weather_mcp_server.py`
+- Format code: `black --skip-string-normalization weather_mcp_server.py`
 - Typecheck: `mypy weather_mcp_server.py --strict`
-- Manual test: `curl -X POST -H "Content-Type: application/json" -d '{"tool": "get_current_weather", "parameters": {"location": "New York"}}' http://localhost:8000`
+- Run test client: `python3 test_mcp_client.py`
 
 ## Style Guidelines
 - **Python Version**: 3.6+

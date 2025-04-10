@@ -25,43 +25,12 @@ A weather forecast MCP (Model Control Protocol) server providing **8-day global 
 - Detailed weather information including temperature, humidity, wind speed, etc.
 - Support for different time zones
 
-## Installation Requirements
-
-### Setting Up a Virtual Environment (Recommended)
-
-It’s recommended to use a virtual environment to avoid conflicts with other Python packages:
-
-```bash
-# Create a virtual environment
-python3 -m venv venv
-
-# Activate the virtual environment
-# On macOS/Linux:
-source venv/bin/activate
-# On Windows:
-# venv\Scripts\activate
-
-# Install dependencies
-pip3 install mcp-server requests pydantic
-
-# When you’re done, you can deactivate the virtual environment
-# deactivate
-```
-
-### Direct Installation
-
-If you prefer not to use a virtual environment, you can install the dependencies directly:
-
-```bash
-pip3 install mcp-server requests pydantic
-```
-
 ## Usage
 
 ### 1. Get an OpenWeatherMap API Key with One Call API 3.0 Access
 
 1. Visit [OpenWeatherMap](https://openweathermap.org/) and register an account
-2. Subscribe to the "One Call API 3.0" plan (offers 1,000 API calls per day for free)
+2. Subscribe to the “One Call API 3.0” plan (offers 1,000 API calls per day for free)
 3. Wait for API key activation (this can take up to an hour)
 
 #### About the One Call API 3.0
@@ -79,10 +48,10 @@ The One Call API 3.0 provides comprehensive weather data:
 - **Free tier**: 1,000 API calls per day
 - **Default limit**: 2,000 API calls per day (can be adjusted in your account)
 - **Billing**: Any calls beyond the free 1,000/day will be charged according to OpenWeatherMap pricing
-- **Usage cap**: You can set a call limit in your account to prevent exceeding your budget
-- If you reach your limit, you'll receive a "429" error response
+- **Usage cap**: You can set a call limit in your account to prevent exceeding your budget (including going beyond the free tier limit so not costs will be incurred)
+- If you reach your limit, you’ll receive a “429” error response
 
-> **Note**: API key activation can take several minutes up to an hour. If you receive authentication errors shortly after subscribing, please wait and try again later.
+> **Note**: API key activation can take several minutes up to an hour. If you receive authentication errors shortly after subscribing or generating a new key, wait a bit and try again later.
 
 ### 2. Run the Server
 
@@ -107,7 +76,7 @@ Run directly without setting environment variables:
 python weather_mcp_server.py
 ```
 
-When calling the tool, you'll need to provide the `api_key` parameter.
+When calling the tool, you’ll need to provide the `api_key` parameter.
 
 ### 3. Use in MCP Client Configuration
 
@@ -129,7 +98,7 @@ Add the following configuration to your MCP-supported client:
 }
 ```
 
-If you're using a virtual environment, your configuration should include the path to the Python executable in the virtual environment:
+If you’re using a virtual environment, your configuration should include the path to the Python executable in the virtual environment:
 
 ```json
 {
@@ -154,7 +123,7 @@ If you're using a virtual environment, your configuration should include the pat
 Get comprehensive weather data for a location including current weather and 8-day forecast with detailed information.
 
 Parameters:
-- `location`: Location name, e.g., "Beijing", "New York", "Tokyo"
+- `location`: Location name, e.g., “Beijing”, “New York”, “Tokyo”
 - `api_key`: OpenWeatherMap API key (optional, will read from environment variable if not provided)
 - `timezone_offset`: Timezone offset in hours, e.g., 8 for Beijing, -4 for New York. Default is 0 (UTC time)
 
@@ -167,28 +136,29 @@ Returns:
 - Detailed weather information including temperature, humidity, wind speed, etc.
 
 Perfect for use cases like:
-- "Which day this week should I mow my lawn?"
-- "When is the best time to go for a run?"
-- "Will it rain this weekend?"
+- “Which day this week should I mow my lawn?”
+- “When is the best time to go for a run?”
+- “Will it rain this weekend?”
+- “How much rain is expected in the next 3 days?”
 
 ##### Location Lookup Details
 
-The `location` parameter uses OpenWeatherMap's geocoding to convert location names to geographic coordinates:
+The `location` parameter uses OpenWeatherMap’s geocoding to convert location names to geographic coordinates:
 
-- Simple location names work: "Paris", "Tokyo", "New York"
-- For better accuracy, include country codes: "Paris,FR", "London,GB", "Portland,US"
-- For US cities, you can include state: "Portland,OR,US" or "Portland,ME,US"
+- Simple location names work: “Paris”, “Tokyo”, “New York”
+- For better accuracy, include country codes: “Paris,FR”, “London,GB”, “Portland,US”
+- For US cities, you can include state: “Portland,OR,US” or “Portland,ME,US”
 - The API supports any location on Earth that OpenWeatherMap can geocode
 - Location names are converted to latitude/longitude coordinates internally
 
-If a location can't be found, the API will return an error. In case of ambiguous locations, try adding country or state codes for more precise results.
+If a location can’t be found, the API will return an error. In case of ambiguous locations, try adding country or state codes for more precise results.
 
 #### get_current_weather
 
 Get current weather for a specified location.
 
 Parameters:
-- `location`: Location name, e.g., "Beijing", "New York", "Tokyo"
+- `location`: Location name, e.g., “Beijing”, “New York”, “Tokyo”
 - `api_key`: OpenWeatherMap API key (optional, will read from environment variable if not provided)
 - `timezone_offset`: Timezone offset in hours, e.g., 8 for Beijing, -4 for New York. Default is 0 (UTC time)
 
@@ -201,7 +171,7 @@ The same location lookup process applies as described in the `get_weather` tool 
 ### Example 1: Current Weather
 
 ```
-User: What's the weather like in New York right now?
+User: What’s the weather like in New York right now?
 
 AI: Let me check the current weather in New York for you.
 [Calling get_current_weather("New York", timezone_offset=-4)]
@@ -233,25 +203,25 @@ Tuesday would be your best option for mowing the lawn. It will be clear and sunn
 
 ### API Key Issues
 
-If you encounter an "Invalid API key" or authorization error:
-1. Make sure you've subscribed to the "One Call API 3.0" plan
+If you encounter an “Invalid API key” or authorization error:
+1. Make sure you’ve subscribed to the “One Call API 3.0” plan
 2. Remember that API key activation can take up to an hour
 3. Verify you have set the OPENWEATHER_API_KEY correctly in environment variables
-4. Check that you're providing the correct api_key parameter when calling the tools
+4. Check that you’re providing the correct api_key parameter when calling the tools
 
 ### Other Common Issues
 
-- **"Location not found" error**:
-  - Try using a more accurate city name or add a country code, e.g., "Beijing,CN" or "Paris,FR"
-  - For US cities with common names, specify the state: "Springfield,IL,US" or "Portland,OR,US"
+- **“Location not found” error**:
+  - Try using a more accurate city name or add a country code, e.g., “Beijing,CN” or “Paris,FR”
+  - For US cities with common names, specify the state: “Springfield,IL,US” or “Portland,OR,US”
   - Check for typos in location names
-  - Some very small or remote locations might not be in OpenWeatherMap's database
+  - Some very small or remote locations might not be in OpenWeatherMap’s database
 
 - **Incorrect location returned**:
   - For cities with the same name in different countries, always include the country code
-  - Example: "Paris,FR" for Paris, France vs "Paris,TX,US" for Paris, Texas
+  - Example: “Paris,FR” for Paris, France vs “Paris,TX,US” for Paris, Texas
 
-- **Rate limiting (429 error)**: You've exceeded your API call limit. Check your OpenWeatherMap account settings.
+- **Rate limiting (429 error)**: You’ve exceeded your API call limit. Check your OpenWeatherMap account settings.
 
 ## Development and Testing
 
@@ -261,22 +231,29 @@ This project includes test files to validate the MCP server functionality. The s
 
 #### Manual Testing
 
-The simplest way to test the server is to:
+Before configuring the server with Claude Desktop or other MCP clients, you can use the included test script to verify your API key and installation:
 
 1. Set your OpenWeatherMap API key:
    ```bash
    export OPENWEATHER_API_KEY="your_api_key"
    ```
 
-2. Run the server:
+2. Run the test client:
    ```bash
-   python3 weather_mcp_server.py
+   python3 test_mcp_client.py
    ```
 
-3. In another terminal, you can send a test request using curl:
-   ```bash
-   curl -X POST -H "Content-Type: application/json" -d '{"tool": "get_current_weather", "parameters": {"location": "New York", "timezone_offset": -4}}' http://localhost:8000
-   ```
+The test script directly calls the weather functions to check the current weather in New York and displays the results. This helps verify that:
+1. Your API key is working properly
+2. The OpenWeatherMap API is accessible
+3. The weather data functions are operational
+
+If the test shows current weather data, you’re ready to configure the server with Claude Desktop, Cursor, or other MCP clients!
+
+<div align="center">
+  <img src="https://rossshannon.github.io/weekly-weather-mcp/images/weather-mcp-test-client.png" alt="Running local test client" width="800">
+  <p><em>Running local test client to verify API key and installation</em></p>
+</div>
 
 #### Automated Tests
 
@@ -286,7 +263,7 @@ The repository includes unit and integration test files that:
 - Verify error handling for API failures
 - Test both MCP tools: `get_weather` and `get_current_weather`
 
-These tests require proper setup of the development environment with all dependencies installed. They're provided as reference for future development.
+These tests require proper setup of the development environment with all dependencies installed. They’re provided as reference for future development.
 
 ## Credits
 
