@@ -38,6 +38,38 @@ def main():
             print(f"Wind: {result['wind']['speed']} at {result['wind']['direction']}")
     except Exception as e:
         print(f"Error during execution: {str(e)}")
+        import traceback
+        traceback.print_exc()
+    
+    print(f"\nTesting get_weather (8-day forecast) for {location}...")
+    try:
+        result = get_weather(location, api_key, timezone_offset)
+        
+        if 'error' in result:
+            print(f"Error: {result['error']}")
+        else:
+            print("\nWeather Forecast Summary:")
+            print(f"Current Temperature: {result['current']['temperature']}")
+            print(f"Current Conditions: {result['current']['weather_condition']}")
+            print(f"\nForecasted Days: {len(result['daily_forecasts'])}")
+            
+            # Print a summary of each day's forecast
+            print("\nDaily Forecasts:")
+            for i, day in enumerate(result['daily_forecasts']):
+                print(f"Day {i+1} ({day['date']}): {day['summary']}")
+                
+                # Find the afternoon entry for a temperature estimate
+                afternoon_entries = [entry for entry in day['entries'] 
+                                    if '15:00:00' in entry['time']]
+                if afternoon_entries:
+                    temp = afternoon_entries[0]['temperature']
+                    condition = afternoon_entries[0]['weather_condition']
+                    pop = afternoon_entries[0].get('pop', 'N/A')
+                    print(f"  Afternoon: {temp}, {condition}, Precip: {pop}")
+    except Exception as e:
+        print(f"Error during execution: {str(e)}")
+        import traceback
+        traceback.print_exc()
     
     print("\nTest complete")
 

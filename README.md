@@ -272,6 +272,20 @@ The repository includes unit and integration test files that:
 
 These tests require proper setup of the development environment with all dependencies installed. They’re provided as reference for future development.
 
+To run the automated tests:
+
+```bash
+# Run unit tests
+python test_weather_mcp.py
+
+# Run integration tests
+python test_mcp_integration.py
+```
+
+The tests use a sample API response (`test_weather_response.json`) to simulate responses from the OpenWeatherMap API, so they can be run without an API key or internet connection.
+
+These tests are provided as reference for future development and to ensure the MCP server continues to function correctly after any modifications.
+
 ## Credits
 
 This project is adapted from the original [Weather MCP](https://github.com/Zippland/weather-mcp) by Zippland. The modifications include:

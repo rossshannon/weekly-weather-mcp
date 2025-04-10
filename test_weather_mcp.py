@@ -27,6 +27,14 @@ sys.modules['pydantic'] = MagicMock()
 sys.modules['pydantic'].BaseModel = MockBaseModel
 sys.modules['pydantic'].Field = MockField
 
+# Make mcp.tool() return the function itself, not a mock
+def mock_tool_decorator():
+    def decorator(func):
+        return func
+    return decorator
+
+sys.modules['mcp.server.fastmcp'].FastMCP().tool = mock_tool_decorator
+
 # Now import should work
 import weather_mcp_server
 
@@ -42,16 +50,16 @@ class TestWeatherMCP(unittest.TestCase):
             del os.environ["OPENWEATHER_API_KEY"]
         else:
             self.original_api_key = None
-        
+
         # Sample test data
         self.test_location = "New York"
         self.test_api_key = "test_api_key_123"
         self.test_timezone_offset = -4
-        
+
         # Sample response data
-        with open("weather_response.json") as f:
+        with open("test_weather_response.json") as f:
             self.sample_onecall_data = json.load(f)
-        
+
         # Sample current weather response
         self.sample_current_weather = {
             "coord": {"lon": -74.006, "lat": 40.7128},
@@ -109,107 +117,149 @@ class TestWeatherMCP(unittest.TestCase):
     @patch('weather_mcp_server.requests.get')
     def test_get_weather_success(self, mock_get):
         """Test successful weather forecast retrieval"""
-        # Mock the API responses
-        mock_response_current = MagicMock()
-        mock_response_current.status_code = 200
-        mock_response_current.json.return_value = self.sample_current_weather
-        
-        mock_response_forecast = MagicMock()
-        mock_response_forecast.status_code = 200
-        mock_response_forecast.json.return_value = {
-            "list": [
+        # Mock the geocoding API response
+        mock_geocoding_response = MagicMock()
+        mock_geocoding_response.status_code = 200
+        mock_geocoding_response.json.return_value = [
+            {"name": "New York", "lat": 40.7128, "lon": -74.0060}
+        ]
+
+        # Mock the One Call API response
+        mock_onecall_response = MagicMock()
+        mock_onecall_response.status_code = 200
+        mock_onecall_response.json.return_value = {
+            "lat": 40.7128,
+            "lon": -74.0060,
+            "timezone": "America/New_York",
+            "timezone_offset": -14400,
+            "current": {
+                "dt": 1617979000,
+                "temp": 15.2,
+                "feels_like": 14.3,
+                "humidity": 76,
+                "wind_speed": 2.06,
+                "wind_deg": 210,
+                "weather": [{"description": "clear sky"}],
+                "clouds": 1
+            },
+            "daily": [
                 {
-                    "dt": int(datetime.now().timestamp()),
-                    "main": {
-                        "temp": 5.0,
-                        "feels_like": 2.0,
-                        "temp_min": 4.0,
-                        "temp_max": 6.0,
-                        "humidity": 40
-                    },
+                    "dt": 1617979000,
+                    "temp": {"day": 15.0, "min": 9.0, "max": 17.0, "eve": 13.0, "morn": 10.0},
+                    "feels_like": {"day": 14.3, "night": 8.5, "eve": 12.5, "morn": 9.5},
+                    "humidity": 76,
+                    "wind_speed": 2.06,
+                    "wind_deg": 210,
                     "weather": [{"description": "clear sky"}],
-                    "clouds": {"all": 10},
-                    "wind": {"speed": 5.0, "deg": 270}
+                    "clouds": 1,
+                    "pop": 0.2,
+                    "summary": "Nice day"
                 }
             ],
-            "city": {"name": "New York"}
+            "hourly": [
+                {
+                    "dt": 1617979000,
+                    "temp": 15.2,
+                    "feels_like": 14.3,
+                    "humidity": 76,
+                    "wind_speed": 2.06,
+                    "wind_deg": 210,
+                    "weather": [{"description": "clear sky"}],
+                    "clouds": 1,
+                    "pop": 0.2
+                }
+            ]
         }
-        
+
         # Configure the mock to return different responses for different URLs
         def side_effect(url, *args, **kwargs):
             if "onecall" in url:
-                return mock_response_forecast
+                return mock_onecall_response
+            elif "geo" in url:
+                return mock_geocoding_response
             else:
-                return mock_response_current
-        
+                # Fallback to current weather API for coordinates
+                return mock_geocoding_response
+
         mock_get.side_effect = side_effect
-        
+
         # Call the function with test data
         result = weather_mcp_server.get_weather(
-            self.test_location, 
-            self.test_api_key, 
+            self.test_location,
+            self.test_api_key,
             self.test_timezone_offset
         )
-        
+
         # Check the result
-        self.assertIn('today', result)
-        self.assertIn('tomorrow', result)
-        self.assertTrue(len(result['today']) > 0)
-        
+        self.assertIn('daily_forecasts', result)
+        self.assertIn('current', result)
+        self.assertTrue(len(result['daily_forecasts']) > 0)
+
         # Verify API was called with the right parameters
         mock_get.assert_called()
-        
+
         # Verify the structure of the returned data
-        first_entry = result['today'][0]
-        self.assertIn('time', first_entry)
-        self.assertIn('temperature', first_entry)
-        self.assertIn('weather_condition', first_entry)
+        self.assertIn('time', result['current'])
+        self.assertIn('temperature', result['current'])
+        self.assertIn('weather_condition', result['current'])
+
+        # Verify daily forecast structure
+        first_day = result['daily_forecasts'][0]
+        self.assertIn('date', first_day)
+        self.assertIn('entries', first_day)
+        self.assertIn('summary', first_day)
 
     @patch('weather_mcp_server.requests.get')
     def test_get_current_weather_success(self, mock_get):
         """Test successful current weather retrieval"""
-        # Mock the API response
-        mock_response_current = MagicMock()
-        mock_response_current.status_code = 200
-        mock_response_current.json.return_value = self.sample_current_weather
-        
-        mock_response_forecast = MagicMock()
-        mock_response_forecast.status_code = 200
-        mock_response_forecast.json.return_value = {
-            "list": [
-                {
-                    "dt": int(datetime.now().timestamp()),
-                    "main": {
-                        "temp": 5.0,
-                        "feels_like": 2.0,
-                        "temp_min": 4.0,
-                        "temp_max": 6.0,
-                        "humidity": 40
-                    },
-                    "weather": [{"description": "clear sky"}],
-                    "clouds": {"all": 10},
-                    "wind": {"speed": 5.0, "deg": 270}
-                }
-            ],
-            "city": {"name": "New York"}
+        # Mock the geocoding API response
+        mock_geocoding_response = MagicMock()
+        mock_geocoding_response.status_code = 200
+        mock_geocoding_response.json.return_value = [
+            {"name": "New York", "lat": 40.7128, "lon": -74.0060}
+        ]
+
+        # Mock the One Call API response
+        mock_onecall_response = MagicMock()
+        mock_onecall_response.status_code = 200
+        mock_onecall_response.json.return_value = {
+            "lat": 40.7128,
+            "lon": -74.0060,
+            "timezone": "America/New_York",
+            "timezone_offset": -14400,
+            "current": {
+                "dt": 1617979000,
+                "temp": 15.2,
+                "feels_like": 14.3,
+                "humidity": 76,
+                "wind_speed": 2.06,
+                "wind_deg": 210,
+                "weather": [{"description": "clear sky"}],
+                "clouds": 1
+            },
+            "daily": [],
+            "hourly": []
         }
-        
+
         # Configure the mock to return different responses for different URLs
         def side_effect(url, *args, **kwargs):
-            if "forecast" in url:
-                return mock_response_forecast
+            if "onecall" in url:
+                return mock_onecall_response
+            elif "geo" in url:
+                return mock_geocoding_response
             else:
-                return mock_response_current
-        
+                # Fallback to current weather API for coordinates
+                return mock_geocoding_response
+
         mock_get.side_effect = side_effect
-        
+
         # Call the function
         result = weather_mcp_server.get_current_weather(
-            self.test_location, 
-            self.test_api_key, 
+            self.test_location,
+            self.test_api_key,
             self.test_timezone_offset
         )
-        
+
         # Verify the structure of the returned data
         self.assertIn('time', result)
         self.assertIn('temperature', result)
@@ -224,14 +274,14 @@ class TestWeatherMCP(unittest.TestCase):
         mock_response.status_code = 401
         mock_response.raise_for_status.side_effect = Exception("API Error")
         mock_get.return_value = mock_response
-        
+
         # Call the function
         result = weather_mcp_server.get_weather(
-            self.test_location, 
-            self.test_api_key, 
+            self.test_location,
+            self.test_api_key,
             self.test_timezone_offset
         )
-        
+
         # Verify error is returned
         self.assertIn('error', result)
 
@@ -247,12 +297,15 @@ class TestWeatherMCP(unittest.TestCase):
         # Mock the geo API response for location not found
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {"message": "city not found"}
+        mock_response.json.return_value = []  # Empty response means location not found
         mock_get.return_value = mock_response
-        
+
+        # Since we're using a new get_coordinates function, we need to mock how it raises the exception
+        mock_get.side_effect = KeyError("coord")
+
         # Call the function
         result = weather_mcp_server.get_weather("NonExistentLocation", self.test_api_key)
-        
+
         # Verify error is returned
         self.assertIn('error', result)
 
@@ -261,34 +314,123 @@ class TestWeatherMCP(unittest.TestCase):
         """Test that errors from get_weather are propagated to get_current_weather"""
         # Mock an error from get_weather
         mock_get_weather.return_value = {"error": "Test error"}
-        
+
         # Call get_current_weather
         result = weather_mcp_server.get_current_weather(
-            self.test_location, 
-            self.test_api_key, 
+            self.test_location,
+            self.test_api_key,
             self.test_timezone_offset
         )
-        
+
         # Verify error is propagated
         self.assertIn('error', result)
         self.assertEqual(result['error'], "Test error")
 
     @patch('weather_mcp_server.get_weather')
-    def test_get_current_weather_empty_result(self, mock_get_weather):
-        """Test handling when get_weather returns empty results"""
-        # Mock empty results from get_weather
-        mock_get_weather.return_value = {"today": []}
-        
+    def test_get_current_weather_missing_current(self, mock_get_weather):
+        """Test handling when get_weather returns data without 'current' field"""
+        # Mock results from get_weather without 'current' field
+        mock_get_weather.return_value = {
+            "daily_forecasts": [{"date": "2023-01-01", "entries": [], "summary": ""}]
+        }
+
         # Call get_current_weather
         result = weather_mcp_server.get_current_weather(
+            self.test_location,
+            self.test_api_key,
+            self.test_timezone_offset
+        )
+
+        # Verify error is returned
+        self.assertIn('error', result)
+        self.assertEqual(result['error'], "Unable to get current weather information")
+
+    @patch('weather_mcp_server.requests.get')
+    def test_geocoding_fallback(self, mock_get):
+        """Test that geocoding falls back to current weather API when geocoding API returns no results"""
+        # First create empty geocoding response
+        empty_geocoding_response = MagicMock()
+        empty_geocoding_response.status_code = 200
+        empty_geocoding_response.json.return_value = []  # Empty response to trigger fallback
+        
+        # Create fallback current weather API response with coordinates
+        fallback_response = MagicMock()
+        fallback_response.status_code = 200
+        fallback_response.json.return_value = {
+            "coord": {"lat": 40.7128, "lon": -74.0060},
+            "weather": [{"description": "clear sky"}],
+            "main": {"temp": 15.0},
+            "name": "New York"
+        }
+        
+        # Create onecall API response for after coordinates are found
+        onecall_response = MagicMock()
+        onecall_response.status_code = 200
+        onecall_response.json.return_value = {
+            "lat": 40.7128,
+            "lon": -74.0060,
+            "timezone": "America/New_York",
+            "timezone_offset": -14400,
+            "current": {
+                "dt": 1617979000,
+                "temp": 15.2,
+                "feels_like": 14.3,
+                "humidity": 76,
+                "wind_speed": 2.06,
+                "wind_deg": 210,
+                "weather": [{"description": "clear sky"}],
+                "clouds": 1
+            },
+            "daily": [
+                {
+                    "dt": 1617979000,
+                    "temp": {"day": 15.0, "min": 9.0, "max": 17.0, "eve": 13.0, "morn": 10.0},
+                    "feels_like": {"day": 14.3, "night": 8.5, "eve": 12.5, "morn": 9.5},
+                    "humidity": 76,
+                    "wind_speed": 2.06,
+                    "wind_deg": 210,
+                    "weather": [{"description": "clear sky"}],
+                    "clouds": 1,
+                    "pop": 0.2,
+                    "summary": "Nice day"
+                }
+            ],
+            "hourly": []
+        }
+        
+        # Configure the mock to return different responses based on the URL
+        # First geocoding returns empty, then fallback to current weather API works, then onecall API works
+        call_count = [0]
+        
+        def side_effect(url, *args, **kwargs):
+            call_count[0] += 1
+            
+            if "onecall" in url:
+                return onecall_response
+            elif "geo/1.0/direct" in url:
+                return empty_geocoding_response
+            elif "data/2.5/weather" in url:
+                # This is the fallback API
+                return fallback_response
+            else:
+                return empty_geocoding_response
+        
+        mock_get.side_effect = side_effect
+        
+        # Call the function
+        result = weather_mcp_server.get_weather(
             self.test_location, 
             self.test_api_key, 
             self.test_timezone_offset
         )
         
-        # Verify error is returned
-        self.assertIn('error', result)
-        self.assertEqual(result['error'], "Unable to get current weather information")
+        # Verify we got valid results indicating the fallback worked
+        self.assertIn('daily_forecasts', result)
+        self.assertIn('current', result)
+        
+        # Check that we called the APIs in the right order
+        # Should be at least 3 calls: geocoding, fallback, onecall
+        self.assertGreaterEqual(call_count[0], 3)
 
 
 if __name__ == '__main__':

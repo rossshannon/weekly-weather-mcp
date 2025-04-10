@@ -18,7 +18,7 @@ except ModuleNotFoundError:
     sys.modules['mcp.server'] = MagicMock()
     sys.modules['mcp.server.fastmcp'] = MagicMock()
     sys.modules['mcp.server.fastmcp'].FastMCP = MagicMock()
-    
+
     # Now import should work
     import weather_mcp_server
 
@@ -34,14 +34,14 @@ class TestMCPIntegration(unittest.TestCase):
             del os.environ["OPENWEATHER_API_KEY"]
         else:
             self.original_api_key = None
-        
+
         # Sample test data
         self.test_location = "New York"
         self.test_api_key = "test_api_key_123"
         self.test_timezone_offset = -4
-        
+
         # Load sample response data
-        with open("weather_response.json") as f:
+        with open("test_weather_response.json") as f:
             self.sample_onecall_data = json.load(f)
 
     def tearDown(self):
@@ -69,7 +69,7 @@ class TestMCPIntegration(unittest.TestCase):
             "clouds": {"all": 20},
             "name": "New York"
         }
-        
+
         # Sample forecast response
         forecast_response = MagicMock()
         forecast_response.status_code = 200
@@ -86,7 +86,7 @@ class TestMCPIntegration(unittest.TestCase):
                     "clouds": {"all": 10},
                     "wind": {"speed": 5.0, "deg": 270}
                 },
-                # Tomorrow's forecast entries  
+                # Tomorrow's forecast entries
                 {
                     "dt": 1744214400,  # Tomorrow
                     "main": {
@@ -100,33 +100,88 @@ class TestMCPIntegration(unittest.TestCase):
             ],
             "city": {"name": "New York"}
         }
-        
+
+        # Mock the geocoding API response
+        geocoding_response = MagicMock()
+        geocoding_response.status_code = 200
+        geocoding_response.json.return_value = [
+            {"name": "New York", "lat": 40.7128, "lon": -74.0060}
+        ]
+
+        # Mock the One Call API response
+        onecall_response = MagicMock()
+        onecall_response.status_code = 200
+        onecall_response.json.return_value = {
+            "lat": 40.7128,
+            "lon": -74.0060,
+            "timezone": "America/New_York",
+            "timezone_offset": -14400,
+            "current": {
+                "dt": 1617979000,
+                "temp": 15.2,
+                "feels_like": 14.3,
+                "humidity": 76,
+                "wind_speed": 2.06,
+                "wind_deg": 210,
+                "weather": [{"description": "clear sky"}],
+                "clouds": 1
+            },
+            "daily": [
+                {
+                    "dt": 1617979000,
+                    "temp": {"day": 15.0, "min": 9.0, "max": 17.0, "eve": 13.0, "morn": 10.0},
+                    "feels_like": {"day": 14.3, "night": 8.5, "eve": 12.5, "morn": 9.5},
+                    "humidity": 76,
+                    "wind_speed": 2.06,
+                    "wind_deg": 210,
+                    "weather": [{"description": "clear sky"}],
+                    "clouds": 1,
+                    "pop": 0.2,
+                    "summary": "Nice day"
+                }
+            ],
+            "hourly": [
+                {
+                    "dt": 1617979000,
+                    "temp": 15.2,
+                    "feels_like": 14.3,
+                    "humidity": 76,
+                    "wind_speed": 2.06,
+                    "wind_deg": 210,
+                    "weather": [{"description": "clear sky"}],
+                    "clouds": 1,
+                    "pop": 0.2
+                }
+            ]
+        }
+
         # Configure the mock to return different responses for different URLs
         def side_effect(url, *args, **kwargs):
-            if "forecast" in url:
-                return forecast_response
+            if "onecall" in url:
+                return onecall_response
+            elif "geo" in url:
+                return geocoding_response
             else:
-                return locations_response
-        
+                return geocoding_response
+
         mock_get.side_effect = side_effect
-        
+
         # Set up the API key in environment
         os.environ["OPENWEATHER_API_KEY"] = self.test_api_key
-        
+
         # Call the MCP tool function
         result = weather_mcp_server.get_weather(
             location=self.test_location,
             timezone_offset=self.test_timezone_offset
         )
-        
+
         # Verify the result structure
-        self.assertIn('today', result)
-        self.assertIn('tomorrow', result)
-        self.assertTrue(len(result['today']) > 0)
-        self.assertTrue(len(result['tomorrow']) > 0)
-        
+        self.assertIn('daily_forecasts', result)
+        self.assertIn('current', result)
+        self.assertTrue(len(result['daily_forecasts']) > 0)
+
         # Check current weather info
-        current = result['today'][0]
+        current = result['current']
         self.assertIn('temperature', current)
         self.assertIn('feels_like', current)
         self.assertIn('weather_condition', current)
@@ -136,58 +191,55 @@ class TestMCPIntegration(unittest.TestCase):
     @patch('requests.get')
     def test_mcp_get_current_weather_tool(self, mock_get):
         """Test the MCP get_current_weather tool with a simulated API response"""
-        # Sample locations response
-        locations_response = MagicMock()
-        locations_response.status_code = 200
-        locations_response.json.return_value = {
-            "coord": {"lon": -74.006, "lat": 40.7128},
-            "weather": [{"id": 800, "main": "Clear", "description": "clear sky", "icon": "01d"}],
-            "main": {
-                "temp": 5.46, "feels_like": 0.42, "temp_min": 4.0, "temp_max": 6.5,
-                "pressure": 1006, "humidity": 36
+        # Mock the geocoding API response
+        geocoding_response = MagicMock()
+        geocoding_response.status_code = 200
+        geocoding_response.json.return_value = [
+            {"name": "New York", "lat": 40.7128, "lon": -74.0060}
+        ]
+
+        # Mock the One Call API response
+        onecall_response = MagicMock()
+        onecall_response.status_code = 200
+        onecall_response.json.return_value = {
+            "lat": 40.7128,
+            "lon": -74.0060,
+            "timezone": "America/New_York",
+            "timezone_offset": -14400,
+            "current": {
+                "dt": 1617979000,
+                "temp": 15.2,
+                "feels_like": 14.3,
+                "humidity": 76,
+                "wind_speed": 2.06,
+                "wind_deg": 210,
+                "weather": [{"description": "clear sky"}],
+                "clouds": 1
             },
-            "wind": {"speed": 9.17, "deg": 298},
-            "clouds": {"all": 20},
-            "name": "New York"
+            "daily": [],
+            "hourly": []
         }
-        
-        # Sample forecast response
-        forecast_response = MagicMock()
-        forecast_response.status_code = 200
-        forecast_response.json.return_value = {
-            "list": [
-                {
-                    "dt": 1744128000,
-                    "main": {
-                        "temp": 5.0, "feels_like": 2.0, "temp_min": 4.0, "temp_max": 6.0,
-                        "humidity": 40, "pressure": 1006
-                    },
-                    "weather": [{"description": "clear sky"}],
-                    "clouds": {"all": 10},
-                    "wind": {"speed": 5.0, "deg": 270}
-                }
-            ],
-            "city": {"name": "New York"}
-        }
-        
+
         # Configure the mock to return different responses for different URLs
         def side_effect(url, *args, **kwargs):
-            if "forecast" in url:
-                return forecast_response
+            if "onecall" in url:
+                return onecall_response
+            elif "geo" in url:
+                return geocoding_response
             else:
-                return locations_response
-        
+                return geocoding_response
+
         mock_get.side_effect = side_effect
-        
+
         # Set up the API key in environment
         os.environ["OPENWEATHER_API_KEY"] = self.test_api_key
-        
+
         # Call the MCP tool function
         result = weather_mcp_server.get_current_weather(
             location=self.test_location,
             timezone_offset=self.test_timezone_offset
         )
-        
+
         # Verify the result is just the current weather
         self.assertIn('temperature', result)
         self.assertIn('feels_like', result)
@@ -198,31 +250,54 @@ class TestMCPIntegration(unittest.TestCase):
     @patch('requests.get')
     def test_api_key_parameter_overrides_env(self, mock_get):
         """Test that API key provided as parameter overrides the environment variable"""
-        # Setup mock response
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "coord": {"lon": -74.006, "lat": 40.7128},
-            "weather": [{"description": "clear sky"}],
-            "main": {"temp": 5.0, "feels_like": 2.0},
-            "wind": {"speed": 5.0, "deg": 270}
+        # Mock geocoding response
+        mock_geocoding = MagicMock()
+        mock_geocoding.status_code = 200
+        mock_geocoding.json.return_value = [
+            {"name": "New York", "lat": 40.7128, "lon": -74.0060}
+        ]
+
+        # Mock One Call API response
+        mock_onecall = MagicMock()
+        mock_onecall.status_code = 200
+        mock_onecall.json.return_value = {
+            "lat": 40.7128,
+            "lon": -74.0060,
+            "current": {"temp": 15, "feels_like": 14, "humidity": 70,
+                       "weather": [{"description": "clear"}], "wind_speed": 5, "wind_deg": 270}
         }
-        mock_get.return_value = mock_response
-        
+
+        # Track which API key was used
+        param_api_key_used = [False]
+        env_api_key_used = [False]
+
+        # Configure the side effect to return the appropriate mock based on the URL
+        def side_effect(url, *args, **kwargs):
+            if "param_api_key" in url:
+                param_api_key_used[0] = True
+            if "env_api_key" in url:
+                env_api_key_used[0] = True
+
+            if "geo/1.0/direct" in url or "geo" in url:
+                return mock_geocoding
+            else:
+                return mock_onecall
+
+        mock_get.side_effect = side_effect
+
         # Set up environment API key
         os.environ["OPENWEATHER_API_KEY"] = "env_api_key"
-        
+
         # Call the function with a different API key parameter
         weather_mcp_server.get_current_weather(
             location=self.test_location,
             api_key="param_api_key",
             timezone_offset=self.test_timezone_offset
         )
-        
+
         # Check that the parameter API key was used in the request
-        call_args = mock_get.call_args_list[0][0][0]
-        self.assertIn("param_api_key", call_args)
-        self.assertNotIn("env_api_key", call_args)
+        self.assertTrue(param_api_key_used[0], "Parameter API key wasn't used")
+        self.assertFalse(env_api_key_used[0], "Environment API key was incorrectly used")
 
 
 if __name__ == '__main__':
