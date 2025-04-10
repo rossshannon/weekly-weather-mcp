@@ -1,0 +1,10 @@
+# Core dependencies - required for running the application
+mcp-server>=0.3.0
+fastmcp>=0.1.2
+requests>=2.28.0
+pydantic>=1.9.0
+
+# Development dependencies - required for testing, formatting, and type checking
+pytest>=7.0.0
+black>=23.0.0
+mypy>=1.0.0

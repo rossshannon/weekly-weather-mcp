@@ -54,7 +54,26 @@ The One Call API 3.0 provides comprehensive weather data:
 
 > **Note**: API key activation can take several minutes up to an hour. If you receive authentication errors shortly after subscribing or generating a new key, wait a bit and try again later.
 
-### 2. Run the Server
+### 2. Clone the Repository and Install Dependencies
+
+```bash
+# Clone the repository
+git clone https://github.com/rossshannon/weekly-weather-mcp.git
+cd weekly-weather-mcp
+
+# Create a virtual environment (recommended)
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# OR
+venv\Scripts\activate  # Windows
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+This will install all the necessary dependencies to run the server and development tools.
+
+### 3. Run the Server
 
 There are two ways to provide the API key:
 
@@ -79,7 +98,7 @@ python weather_mcp_server.py
 
 When calling the tool, you’ll need to provide the `api_key` parameter.
 
-### 3. Use in MCP Client Configuration
+### 4. Use in MCP Client Configuration
 
 Add the following configuration to your MCP-supported client (e.g., [Claude Desktop](https://www.anthropic.com/claude-desktop) ([instructions](https://modelcontextprotocol.io/quickstart/user)), [Cursor](https://www.cursor.com/)):
 
@@ -117,7 +136,7 @@ If you’re using a virtual environment, your configuration should include the f
 }
 ```
 
-### 4. Available Tools
+### 5. Available Tools
 
 #### get_weather
 
@@ -234,9 +253,9 @@ If you encounter an “Invalid API key” or authorization error:
 
 ### Testing
 
-This project includes test files to validate the MCP server functionality. The server has been manually tested to ensure it works correctly with Claude Desktop and other MCP clients.
+This project includes unit tests, integration tests, and mock client test files to validate the MCP server functionality. The server has been manually tested to ensure it works correctly with Claude Desktop, Cursor, and other MCP clients.
 
-#### Manual Testing
+#### Manual Client Testing
 
 Before configuring the server with Claude Desktop or other MCP clients, you can use the included test script to verify your API key and installation:
 
@@ -268,7 +287,7 @@ The repository includes unit and integration test files that:
 - Test API key handling and validation
 - Validate data parsing and formatting
 - Verify error handling for API failures
-- Test both MCP tools: `get_weather` and `get_current_weather`
+- Test both exposed MCP tools: `get_weather` and `get_current_weather`
 
 These tests require proper setup of the development environment with all dependencies installed. They’re provided as reference for future development.
 
@@ -288,10 +307,11 @@ These tests are provided as reference for future development and to ensure the M
 
 ## Credits
 
-This project is adapted from the original [Weather MCP](https://github.com/Zippland/weather-mcp) by Zippland. The modifications include:
+This project is adapted from an original [Weather MCP](https://github.com/Zippland/weather-mcp) by Zippland. The modifications include:
 
 - Integration with OpenWeatherMap One Call API 3.0
-- Extended forecast data from 5 days to 8 days (today + 7 days)
+- Extended forecast data from 2 days to 8 days (today + 7 days)
 - Addition of morning, afternoon and evening data points for each day
 - Hourly forecasts for the next 48 hours
-- Inclusion of weather summaries and precipitation probabilities
+- Inclusion of weather summaries, wind speed, and precipitation probabilities
+- Unit tests, integration tests, and mock client test files
