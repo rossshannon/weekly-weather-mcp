@@ -64,8 +64,9 @@ def main():
                 if afternoon_entries:
                     temp = afternoon_entries[0]['temperature']
                     condition = afternoon_entries[0]['weather_condition']
-                    pop = afternoon_entries[0].get('pop', 'N/A')
-                    print(f"  Afternoon: {temp}, {condition}, Precip: {pop}")
+                    pop = afternoon_entries[0].get('pop')
+                    pop_str = f"{int(pop * 100)}%" if pop is not None else "N/A"
+                    print(f"  Afternoon: {temp}, {condition}, Precip: {pop_str}")
     except Exception as e:
         print(f"Error during execution: {str(e)}")
         import traceback

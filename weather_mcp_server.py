@@ -9,8 +9,7 @@ import os
 # Create MCP server instance
 mcp = FastMCP(
     name="WeatherForecastServer",
-    description="Provides global weather forecasts and current weather conditions",
-    version="1.2.0"
+    instructions="Provides global weather forecasts and current weather conditions"
 )
 
 # Define data models
@@ -29,7 +28,7 @@ class WeatherEntry(BaseModel):
     wind: WindInfo = Field(..., description="Wind speed and direction information")
     rain: str = Field(..., description="Rainfall amount")
     clouds: str = Field(..., description="Cloud coverage percentage")
-    pop: Optional[str] = Field(None, description="Probability of precipitation")
+    pop: Optional[float] = Field(None, description="Probability of precipitation (0-1)")
 
 class DailyForecast(BaseModel):
     date: str = Field(..., description="Date of the forecast in YYYY-MM-DD format")
@@ -148,7 +147,7 @@ def get_weather_forecast(present_location, time_zone_offset, api_key=None):
             },
             'rain': f"{current.get('rain', {}).get('1h', 0)} mm/h" if 'rain' in current else 'No rain',
             'clouds': f"{current.get('clouds', 0)}%",
-            'pop': "N/A"  # One Call doesn't provide precipitation probability in current
+            'pop': None  # One Call doesn't provide precipitation probability in current
         }
 
         # Process daily forecasts
@@ -180,7 +179,7 @@ def get_weather_forecast(present_location, time_zone_offset, api_key=None):
                 },
                 'rain': f"{day.get('rain', 0)} mm" if 'rain' in day else 'No rain',
                 'clouds': f"{day.get('clouds', 0)}%",
-                'pop': f"{day.get('pop', 0) * 100}%"  # Convert to percentage
+                'pop': float(day.get('pop') or 0)
             }
 
             forecasts_by_date[date_str]['entries'].append(forecast_entry)
@@ -206,7 +205,7 @@ def get_weather_forecast(present_location, time_zone_offset, api_key=None):
                 },
                 'rain': f"{day.get('rain', 0)} mm" if 'rain' in day else 'No rain',
                 'clouds': f"{day.get('clouds', 0)}%",
-                'pop': f"{day.get('pop', 0) * 100}%"
+                'pop': float(day.get('pop') or 0)
             })
 
             # Afternoon entry (15 PM)
@@ -225,7 +224,7 @@ def get_weather_forecast(present_location, time_zone_offset, api_key=None):
                 },
                 'rain': f"{day.get('rain', 0)} mm" if 'rain' in day else 'No rain',
                 'clouds': f"{day.get('clouds', 0)}%",
-                'pop': f"{day.get('pop', 0) * 100}%"
+                'pop': float(day.get('pop') or 0)
             })
 
             # Evening entry (20 PM)
@@ -244,7 +243,7 @@ def get_weather_forecast(present_location, time_zone_offset, api_key=None):
                 },
                 'rain': f"{day.get('rain', 0)} mm" if 'rain' in day else 'No rain',
                 'clouds': f"{day.get('clouds', 0)}%",
-                'pop': f"{day.get('pop', 0) * 100}%"
+                'pop': float(day.get('pop') or 0)
             })
 
         # Process hourly forecasts and add to appropriate days
@@ -271,7 +270,7 @@ def get_weather_forecast(present_location, time_zone_offset, api_key=None):
                 },
                 'rain': f"{hour.get('rain', {}).get('1h', 0)} mm/h" if 'rain' in hour else 'No rain',
                 'clouds': f"{hour.get('clouds', 0)}%",
-                'pop': f"{hour.get('pop', 0) * 100}%"  # Convert to percentage
+                'pop': float(hour.get('pop') or 0)
             }
 
             # Only add hourly entries for the first 48 hours (to keep the response size reasonable)
