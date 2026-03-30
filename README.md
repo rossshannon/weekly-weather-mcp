@@ -24,6 +24,10 @@ A weather forecast MCP (Model Context Protocol) server providing **8-day global 
 - 📍 Support for reporting results in different time zones
 - 🗂️ No separate configuration file needed; API key can be passed directly through environment variables or parameters
 
+## Hosted deployment
+
+A hosted deployment is available on [Fronteir AI](https://fronteir.ai/mcp/rossshannon-weekly-weather-mcp).
+
 ## Usage
 
 ### 1. Get an OpenWeatherMap API Key with One Call API 3.0 Access (free)
